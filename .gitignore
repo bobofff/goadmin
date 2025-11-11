@@ -1,0 +1,39 @@
+# Binaries and build artifacts
+bin/
+dist/
+build/
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+*.log
+
+# Go tooling outputs
+coverage.out
+*.coverprofile
+.gocache/
+.gopath/
+
+# Dependency/vendor directories
+vendor/
+
+# Local environment and config files
+.env
+.env.*
+.envrc
+.air.toml
+
+# IDE/editor settings
+.vscode/
+.idea/
+*.iml
+
+# OS metadata
+.DS_Store
+
+# Temporary files
+tmp/
+*.tmp
+*.swp
