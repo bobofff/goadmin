@@ -74,3 +74,11 @@ func parseDurationOrDefault(value string, def time.Duration) time.Duration {
 	}
 	return def
 }
+
+func GetString(key, def string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		return def
+	}
+	return value
+}

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
@@ -69,7 +70,11 @@ func (s *AuthService) Login(ctx context.Context, req dto.LoginRequest, clientIP 
 		return nil, err
 	}
 
-	token := s.generateToken(operator.ID, now)
+	roles := s.parseRoles(operator.Roles)
+	token, err := s.generateToken(operator, roles, now)
+	if err != nil {
+		return nil, fmt.Errorf("generate token: %w", err)
+	}
 
 	return &dto.LoginResponse{
 		Token:     token,
@@ -80,14 +85,20 @@ func (s *AuthService) Login(ctx context.Context, req dto.LoginRequest, clientIP 
 			Phone:    operator.Phone,
 			Email:    operator.Email,
 			Nickname: operator.Nickname,
-			Roles:    s.parseRoles(operator.Roles),
+			Roles:    roles,
 			IsAdmin:  operator.IsAdmin == "1",
 		},
 	}, nil
 }
 
 func (s *AuthService) verifyPassword(operator *model.Operator, raw string) bool {
-	hashed := utils.MD5String(raw)
+
+	salt := appConfig.GetString("OPERATOR_PASSWORD_SALT", "default_salt")
+	raw = fmt.Sprintf("%s%s%s", raw, salt, operator.CreateTime.Format("2006-01-02 15:04:05"))
+
+	hashed := utils.MD5String(utils.MD5String(raw))
+	fmt.Println(operator.Password)
+	fmt.Println(hashed)
 	return strings.EqualFold(operator.Password, hashed)
 }
 
@@ -106,7 +117,21 @@ func (s *AuthService) parseRoles(roles string) []string {
 	return result
 }
 
-func (s *AuthService) generateToken(operatorID int, now time.Time) string {
-	// NOTE: Placeholder token implementation. Replace with JWT or other secure mechanism if needed.
-	return uuid.NewSHA1(uuid.Must(uuid.NewRandom()), []byte(s.tokenSecret+now.String())).String()
+func (s *AuthService) generateToken(operator *model.Operator, roles []string, now time.Time) (string, error) {
+	expiresAt := now.Add(s.tokenTTL)
+	isAdmin := operator.IsAdmin == "1"
+
+	claims := jwt.MapClaims{
+		"sub":      fmt.Sprintf("%d", operator.ID),
+		"name":     operator.CName,
+		"roles":    roles,
+		"is_admin": isAdmin,
+		"jti":      uuid.NewString(),
+		"iat":      now.Unix(),
+		"nbf":      now.Unix(),
+		"exp":      expiresAt.Unix(),
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(s.tokenSecret))
 }
