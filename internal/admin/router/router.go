@@ -16,9 +16,15 @@ func Register(engine *gin.Engine, db *gorm.DB, cfg *appConfig.Config) {
 	authService := service.NewAuthService(operatorRepo, cfg)
 	authController := controller.NewAuthController(authService)
 
+	productRepo := repository.NewProductRepository(db)
+	productService := service.NewProductService(productRepo)
+	productController := controller.NewProductController(productService)
+
 	adminGroup := engine.Group("/admin")
 	{
 		adminGroup.POST("/account/login", authController.Login)
+
+		adminGroup.GET("/product", productController.List)
 	}
 }
 
