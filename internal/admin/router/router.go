@@ -25,6 +25,7 @@ func Register(engine *gin.Engine, db *gorm.DB, cfg *appConfig.Config) {
 		adminGroup.POST("/account/login", authController.Login)
 
 		adminGroup.GET("/product", productController.List)
+		adminGroup.POST("/product", productController.Create)
 	}
 }
 

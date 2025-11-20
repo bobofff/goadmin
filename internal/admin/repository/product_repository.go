@@ -13,6 +13,7 @@ import (
 type ProductRepository interface {
 	List(ctx context.Context, params ProductListParams) ([]commonModel.Product, int64, error)
 	GetBrandNames(ctx context.Context, ids []int) (map[int]string, error)
+	Create(ctx context.Context, product *commonModel.Product) error
 }
 
 type productRepository struct {
@@ -87,10 +88,20 @@ func (r *productRepository) List(ctx context.Context, params ProductListParams) 
 		query = query.Where("has_powerline = ?", *filters.HasPowerLine)
 	}
 	if filters.IsMergeProduct != nil {
-		query = query.Where("is_merge_product = ?", *filters.IsMergeProduct)
+		sub := r.db.Table("db_product_relation").Select("pid").Where("is_del = 0")
+		if *filters.IsMergeProduct == 1 {
+			query = query.Where("id IN (?)", sub)
+		} else {
+			query = query.Where("id NOT IN (?)", sub)
+		}
 	}
 	if filters.IsHaveInventory != nil {
-		query = query.Where("is_have_inventory = ?", *filters.IsHaveInventory)
+		sub := r.db.Table("db_inventory").Select("productid").Where("is_del = 0")
+		if *filters.IsHaveInventory == 1 {
+			query = query.Where("id IN (?)", sub)
+		} else {
+			query = query.Where("id NOT IN (?)", sub)
+		}
 	}
 	if filters.Type != nil {
 		query = query.Where("type = ?", *filters.Type)
@@ -159,4 +170,8 @@ func (r *productRepository) GetBrandNames(ctx context.Context, ids []int) (map[i
 	}
 
 	return result, nil
+}
+
+func (r *productRepository) Create(ctx context.Context, product *commonModel.Product) error {
+	return r.db.WithContext(ctx).Create(product).Error
 }

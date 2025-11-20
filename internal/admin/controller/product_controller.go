@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -34,4 +35,25 @@ func (ctl *ProductController) List(c *gin.Context) {
 	}
 
 	response.Success(c, result)
+}
+
+func (ctl *ProductController) Create(c *gin.Context) {
+	var request dto.ProductCreateRequest
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		response.Error(c, http.StatusBadRequest, 4001, binding.ParseError(err, request, c))
+		return
+	}
+
+	product, err := ctl.productService.Insert(c.Request.Context(), request)
+	if err != nil {
+		if errors.Is(err, service.ErrInvalidProductInput) {
+			response.Error(c, http.StatusBadRequest, 4001, err.Error())
+		} else {
+			response.Error(c, http.StatusInternalServerError, 5001, err.Error())
+		}
+		return
+	}
+
+	response.Success(c, gin.H{"id": product.ID})
 }

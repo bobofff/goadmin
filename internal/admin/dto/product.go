@@ -27,3 +27,19 @@ type ProductListResponse struct {
 	PageSize  int                   `json:"pageSize"`
 	List      []commonModel.Product `json:"list"`
 }
+
+type ProductCreateRequest struct {
+	Sku            *string `json:"sku" form:"sku" binding:"required"`
+	Cname          *string `json:"cname" form:"cname" binding:"required"`
+	Abbr           *string `json:"abbr" form:"abbr"`
+	Code           *string `json:"code" form:"code"`
+	Brand          *int    `json:"brand" form:"brand"`
+	Condition      *int    `json:"condition" form:"condition"`
+	Algorithm      *int    `json:"algorithm" form:"algorithm"`
+	ModelID        *int    `json:"model_id" form:"model_id"`
+	BillingWeight  *int    `json:"billing_weight" form:"billing_weight"`
+	HasPowerSource *int    `json:"has_powersource" form:"has_powersource" binding:"omitempty,oneof=0 1"`
+	HasPowerLine   *int    `json:"has_powerline" form:"has_powerline" binding:"omitempty,oneof=0 1"`
+	Type           *int    `json:"type" form:"type"`
+	Creator        *int    `json:"creator" form:"creator"`
+}
